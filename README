@@ -1,0 +1,18 @@
+This Python script will run a HTTP server capable to serving content
+to games in the Monster Hunter series for the PSP.
+
+You can report issues, get the latest version, and view the source at:
+  http://github.com/svanheulen/mhqs
+
+Bitcoin donations are accepted at: 1FiViad5t8ESJ6FUxosffXzvRPH86b1TUi
+
+You need to create a folder called 'quests' in the same folder as the
+server.py file and put the quest files in there. Then run the
+server.py file using Python 2.x to start the server.
+
+Once you have the server running you can access it from Monster Hunter
+Portable 3rd even with OFW on your PSP. Just create a new network
+configuration on your PSP and set up the proxy setting to point to the
+machine running this server. Within Monster Hunter go to the download
+section and use the new network configuration to view your quest
+server.
