@@ -1,9 +1,6 @@
 This Python script will run a HTTP server capable to serving content
 to games in the Monster Hunter series for the PSP.
 
-*** NOTE: Currently this will not work. The checksum function needs to
-    be figured out before the PSP will accept the quest files.
-
 You can report issues, get the latest version, and view the source at:
   http://github.com/svanheulen/mhqs
 
