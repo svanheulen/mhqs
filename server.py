@@ -51,8 +51,14 @@ class MHP3rdHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         f.close()
 
     def _calc_csum(self, q):
-        # need to figure out how the checksum is calculated
-        return 0
+        f = open(q)
+        temp = f.read()
+        f.close()
+        csum = 0
+        for i in temp:
+            csum += ord(i)
+            csum &= 0xffffffff
+        return csum & 0xffff
 
 httpd = BaseHTTPServer.HTTPServer(('', port), MHP3rdHTTPRequestHandler)
 httpd.serve_forever()
