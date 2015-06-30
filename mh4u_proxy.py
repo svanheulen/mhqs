@@ -9,18 +9,20 @@ from twisted.web.static import File
 class TunnelProtocol(Protocol):
     def __init__(self, request):
         self._request = request
+        self._channel = request.channel
+        self._peertransport = request.channel.transport
 
     def connectionMade(self):
-        self._request.channel._openTunnel(self)
+        self._channel._openTunnel(self)
         self._request.setResponseCode(200, 'Connection established')
         self._request.write('')
 
     def dataReceived(self, data):
-        self._request.write(data)
+        self._peertransport.write(data)
 
     def connectionLost(self, reason):
         self._request.finish()
-        self._request.channel._closeTunnel()
+        self._channel._closeTunnel()
 
 
 class TunnelProtocolFactory(ClientFactory):
