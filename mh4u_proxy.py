@@ -42,7 +42,7 @@ class TunnelProtocolFactory(ClientFactory):
 class InjectionProxyRequest(ProxyRequest):
     def process(self):
         self.uri = self.uri.replace('goshawk.capcom.co.jp', 'localhost:8081')
-        super(InjectionProxyRequest, self).process()
+        ProxyRequest.process(self)
 
 
 class TunnelProxyRequest(InjectionProxyRequest):
@@ -50,7 +50,7 @@ class TunnelProxyRequest(InjectionProxyRequest):
         if self.method == 'CONNECT':
             self._processConnect()
         else:
-            super(TunnelProxyRequest, self).process()
+            InjectionProxyRequest.process(self)
 
     def _processConnect(self):
         try:
@@ -68,7 +68,7 @@ class TunnelProxy(Proxy):
 
     def __init__(self):
         self._tunnel = None
-        super(TunnelProxy, self).__init__()
+        Proxy.__init__(self)
 
     def _openTunnel(self, tunnel):
         self._tunnel = tunnel
@@ -80,7 +80,7 @@ class TunnelProxy(Proxy):
         if self._tunnel:
             self._tunnel.transport.write(data)
         else:
-            super(TunnelProxy, self).dataReceived(data)
+            Proxy.dataReceived(self, data)
 
 
 class TunnelProxyFactory(HTTPFactory):
