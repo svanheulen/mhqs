@@ -84,6 +84,10 @@ class TunnelProxy(Proxy):
         else:
             Proxy.dataReceived(self, data)
 
+    def connectionLost(self, reason):
+        if self._tunnel:
+            self._tunnel.transport.loseConnection()
+
 
 class TunnelProxyFactory(HTTPFactory):
     protocol = TunnelProxy
