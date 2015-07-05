@@ -1,18 +1,26 @@
-This Python script will run a HTTP server capable to serving content
-to games in the Monster Hunter series for the PSP.
+This Python script will run a HTTP proxy server capable to serving content to
+Monster Hunter 4 Ultimate on the Nintendo 3DS.
 
 You can report issues, get the latest version, and view the source at:
   http://github.com/svanheulen/mhqs
 
-Bitcoin donations are accepted at: 1FiViad5t8ESJ6FUxosffXzvRPH86b1TUi
+These scripts work with Python 2.x only
 
-You need to create a folder called 'quests' in the same folder as the
-server.py file and put the quest files in there. Then run the
-server.py file using Python 2.x to start the server.
+They also require the Twisted module:
+  https://twistedmatrix.com/trac/
 
-Once you have the server running you can access it from Monster Hunter
-Portable 3rd even with OFW on your PSP. Just create a new network
-configuration on your PSP and set up the proxy setting to point to the
-machine running this server. Within Monster Hunter go to the download
-section and use the new network configuration to view your quest
-server.
+And my mhef module:
+  https://github.com/svanheulen/mhef
+
+View the command line help like this:
+  python mh4u_proxy.py -h
+
+The quest files that you provide to the script must be decrypted (and valid).
+The script will build all the files you need, encrypt them and keep them in a
+temporary folder until it is closed. Keep in mind that it will use the quest ID
+from inside the quest file, so make sure to change it to something different
+for each of your quests. The names of the quest files are irrelevant.
+
+For information on the quest file format see this page:
+  https://github.com/svanheulen/mhff/wiki/Monster-Hunter-4-Ultimate-Quests
+
