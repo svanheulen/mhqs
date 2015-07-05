@@ -82,10 +82,10 @@ def make_root(game, language, quest_files):
 
     return root
 
-parser = argparse.ArgumentParser(description='')
-parser.add_argument('region', choices=('USA', 'EUR'), help='')
-parser.add_argument('language', choices=('eng', 'fre', 'ger', 'ita', 'spa'), help='')
-parser.add_argument('questfile', nargs='+', help='')
+parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
+parser.add_argument('region', choices=('USA', 'EUR'), help='your game region')
+parser.add_argument('language', choices=('eng', 'fre', 'ger', 'ita', 'spa'), help='your game language')
+parser.add_argument('questfile', nargs='+', help='the decrypted quest files to serve')
 args = parser.parse_args()
 
 game = mhef.n3ds.MH4G_NA
