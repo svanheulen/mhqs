@@ -1,103 +1,103 @@
+import argparse
+import os
+import shutil
+import struct
+import sys
+import tempfile
+import time
+
 from twisted.internet import reactor
-from twisted.internet.protocol import Protocol, ClientFactory
-from twisted.web.http import HTTPFactory
-from twisted.web.proxy import ProxyRequest, Proxy
 from twisted.web.server import Site
 from twisted.web.static import File
+from twisted.python import log
+
+import mhef.n3ds
+
+import proxy
 
 
-class TunnelProtocol(Protocol):
-    def __init__(self, request):
-        self._request = request
-        self._channel = request.channel
-        self._peertransport = request.channel.transport
+def make_root(game, language, quest_files):
+    dc = mhef.n3ds.DLCCipher(game)
 
-    def connectionMade(self):
-        self._channel._openTunnel(self)
-        self._request.setResponseCode(200, 'Connection established')
-        self._request.write('')
+    root = tempfile.mkdtemp()
+    full_path = os.path.join(root, '3ds/mh4g_us_')
+    if game == mhef.n3ds.MH4G_EU:
+        full_path = os.path.join(root, '3ds/mh4g_eu_')
+    os.makedirs(full_path)
 
-    def dataReceived(self, data):
-        self._peertransport.write(data)
+    default_info = dc.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA               \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
+    open(os.path.join(full_path, 'DLC_Info_Notice_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(full_path, 'DLC_Info_Otomo_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(full_path, 'DLC_Info_Quest_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(full_path, 'DLC_Info_Special_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(full_path, 'DLC_EShopInfo.txt'), 'wb').write(dc.encrypt('0|0|0|0|0|0|0'))
+    open(os.path.join(full_path, 'DLC_ShopAmulInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
+    open(os.path.join(full_path, 'DLC_ShopEquiInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
 
-    def connectionLost(self, reason):
-        self._request.finish()
-        self._channel._closeTunnel()
+    open(os.path.join(full_path, 'DLC_Info_List_{}.txt'.format(language)), 'wb').write(dc.encrypt(time.strftime('%Y%m%d00|0|Content Preview')))
+    open(os.path.join(full_path, time.strftime('DLC_Info_%Y%m%d00_{}.txt'.format(language))), 'wb').write(dc.encrypt(time.strftime('%y/%m/%d|0|Information:|Monster Hunter Quest Server|This software is licensed|under GPLv3. Please visit|github.com/svanheulen/mhqs|for more information.| | | | | ')))
 
+    event_quests = ''
+    for i in range(len(quest_files)):
+        quest = open(quest_files[i], 'rb')
+        quest.seek(0xa0)
+        info = struct.unpack('8I2H3B33x5H', quest.read(82))
+        quest.seek(info[7])
+        language_offset = struct.unpack('5I', quest.read(20))
+        quest.seek(language_offset[0])
+        text_offset = struct.unpack('7I', quest.read(28))
+        quest.seek(text_offset[0])
+        title = quest.read(text_offset[1] - text_offset[0]).decode('utf-16').strip('\x00')
+        success = quest.read(text_offset[2] - text_offset[1]).decode('utf-16').strip('\x00').split('\n')
+        if len(success) < 2:
+            success.append(' ')
+        success = '|'.join(success)
+        failure = quest.read(text_offset[3] - text_offset[2]).decode('utf-16').strip('\x00').split('\n')
+        if len(failure) < 2:
+            failure.append(' ')
+        failure = '|'.join(failure)
+        summary = quest.read(text_offset[4] - text_offset[3]).decode('utf-16').strip('\x00').split('\n')
+        if len(summary) < 7:
+            summary.extend([' '] * (7 - len(summary)))
+        summary = '|'.join(summary)
+        main_monsters = quest.read(text_offset[5] - text_offset[4]).decode('utf-16').strip('\x00').split('\n')
+        if len(main_monsters) < 2:
+            main_monsters.append(' ')
+        main_monsters = '|'.join(main_monsters)
+        client = quest.read(text_offset[6] - text_offset[5]).decode('utf-16').strip('\x00')
+        sub_quest = quest.read(language_offset[0] - text_offset[6]).decode('utf-16').strip('\x00')
+        event_quests += time.strftime('%Y%m%d{:02d}|{:06d}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(i, info[8], title, info[0], info[9], 0, info[10], info[5], info[2], info[1], info[13], info[14], info[15], info[16], info[17], info[11], info[12], success, sub_quest, failure, main_monsters, client, summary))
+        quest.seek(0)
+        open(os.path.join(full_path, 'm{:06d}.mib'.format(info[8])), 'wb').write(dc.encrypt(quest.read()))
+        quest.close()
+    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(event_quests))
 
-class TunnelProtocolFactory(ClientFactory):
-    protocol = TunnelProtocol
+    default_quests = dc.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
+    open(os.path.join(full_path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
+    open(os.path.join(full_path, 'DLC_EpisodeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
 
-    def __init__(self, request):
-        self._request = request
+    open(os.path.join(full_path, 'DLC_OtomoInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|| | |0|0|0|0|0|0|0|0|0|0|0| '))
 
-    def buildProtocol(self, addr):
-        p = self.protocol(self._request)
-        p.factory = self
-        return p
+    open(os.path.join(full_path, 'DLC_Special_{}.txt'.format(language)), 'wb').write(dc.encrypt('0||0| '))
 
-    def clientConnectionFailed(self, connector, reason):
-        self._request.setResponseCode(502, 'Bad Gateway')
-        self._request.finish()
+    return root
 
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('region', choices=('USA', 'EUR'), help='')
+parser.add_argument('language', choices=('eng', 'fre', 'ger', 'ita', 'spa'), help='')
+parser.add_argument('questfile', nargs='+', help='')
+args = parser.parse_args()
 
-class InjectionProxyRequest(ProxyRequest):
-    def process(self):
-        self.uri = self.uri.replace('goshawk.capcom.co.jp', 'localhost:8081')
-        ProxyRequest.process(self)
+game = mhef.n3ds.MH4G_NA
+if args.region == 'EUR':
+    game = mhef.n3ds.MH4G_EU
 
+root = make_root(game, args.language, args.questfile)
 
-class TunnelProxyRequest(InjectionProxyRequest):
-    def process(self):
-        if self.method == 'CONNECT':
-            self._processConnect()
-        else:
-            InjectionProxyRequest.process(self)
-
-    def _processConnect(self):
-        try:
-            host, portStr = self.uri.split(':', 1)
-            port = int(portStr)
-        except ValueError:
-            self.setResponseCode(400, 'Bad Request')
-            self.finish()
-        else:
-            self.reactor.connectTCP(host, port, TunnelProtocolFactory(self))
-
-
-class TunnelProxy(Proxy):
-    requestFactory = TunnelProxyRequest
-
-    def __init__(self):
-        self._tunnel = None
-        Proxy.__init__(self)
-
-    def _openTunnel(self, tunnel):
-        self._tunnel = tunnel
-
-    def _closeTunnel(self):
-        self._tunnel = None
-
-    def dataReceived(self, data):
-        if self._tunnel:
-            self._tunnel.transport.write(data)
-        else:
-            Proxy.dataReceived(self, data)
-
-    def connectionLost(self, reason):
-        if self._tunnel:
-            self._tunnel.transport.loseConnection()
-
-
-class TunnelProxyFactory(HTTPFactory):
-    protocol = TunnelProxy
-
-
-import twisted.python.log
-import sys
-twisted.python.log.startLogging(sys.stderr)
-
-reactor.listenTCP(8080, TunnelProxyFactory())
-reactor.listenTCP(8081, Site(File('./web_root')))
+log.startLogging(sys.stderr)
+reactor.listenTCP(8080, proxy.TunnelProxyFactory())
+reactor.listenTCP(8081, Site(File(root)))
 reactor.run()
+
+shutil.rmtree(root)
 
