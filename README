@@ -19,7 +19,9 @@ The quest files that you provide to the script must be decrypted (and valid).
 The script will build all the files you need, encrypt them and keep them in a
 temporary folder until it is closed. Keep in mind that it will use the quest ID
 from inside the quest file, so make sure to change it to something different
-for each of your quests. The names of the quest files are irrelevant.
+for each of your quests. The names of the quest files are irrelevant. Also note
+that the proxy runs on port 8080, so be sure to set it correctly in your proxy
+settings on your 3DS.
 
 For information on the quest file format see this page:
   https://github.com/svanheulen/mhff/wiki/Monster-Hunter-4-Ultimate-Quests
