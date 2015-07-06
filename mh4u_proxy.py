@@ -23,6 +23,8 @@ def make_root(game, language, quest_files):
     full_path = os.path.join(root, '3ds/mh4g_us_')
     if game == mhef.n3ds.MH4G_EU:
         full_path = os.path.join(root, '3ds/mh4g_eu_')
+    elif game == mhef.n3ds.MH4G_JP:
+        full_path = os.path.join(root, '3ds/mh4g_nihon')
     os.makedirs(full_path)
 
     default_info = dc.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA               \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
@@ -44,7 +46,16 @@ def make_root(game, language, quest_files):
         info = struct.unpack('8I2H3B33x5H', quest.read(82))
         quest.seek(info[7])
         language_offset = struct.unpack('5I', quest.read(20))
-        quest.seek(language_offset[0])
+        lang_id = 0
+        if language == 'fre':
+            lang_id = 1
+        elif language == 'spa':
+            lang_id = 2
+        elif language == 'ger':
+            lang_id = 3
+        elif language == 'ita':
+            lang_id = 4
+        quest.seek(language_offset[lang_id])
         text_offset = struct.unpack('7I', quest.read(28))
         quest.seek(text_offset[0])
         title = quest.read(text_offset[1] - text_offset[0]).decode('utf-16').strip('\x00')
@@ -65,12 +76,12 @@ def make_root(game, language, quest_files):
             main_monsters.append(' ')
         main_monsters = '|'.join(main_monsters)
         client = quest.read(text_offset[6] - text_offset[5]).decode('utf-16').strip('\x00')
-        sub_quest = quest.read(language_offset[0] - text_offset[6]).decode('utf-16').strip('\x00')
-        event_quests += time.strftime('%Y%m%d{:02d}|{:06d}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(i, info[8], title, info[0], info[9], 0, info[10], info[5], info[2], info[1], info[13], info[14], info[15], info[16], info[17], info[11], info[12], success, sub_quest, failure, main_monsters, client, summary))
+        sub_quest = quest.read(language_offset[lang_id] - text_offset[6]).decode('utf-16').strip('\x00')
+        event_quests += time.strftime('%Y%m%d') + u'{:02d}|{:05d}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(i, info[8], title, info[0], info[9], 0, info[10], info[5], info[2], info[1], info[13], info[14], info[15], info[16], info[17], info[11], info[12], success, sub_quest, failure, main_monsters, client, summary)
         quest.seek(0)
-        open(os.path.join(full_path, 'm{:06d}.mib'.format(info[8])), 'wb').write(dc.encrypt(quest.read()))
+        open(os.path.join(full_path, 'm{:05d}.mib'.format(info[8])), 'wb').write(dc.encrypt(quest.read()))
         quest.close()
-    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(event_quests))
+    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(event_quests.encode('utf-8')))
 
     default_quests = dc.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
     open(os.path.join(full_path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
@@ -84,13 +95,15 @@ def make_root(game, language, quest_files):
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
 parser.add_argument('region', choices=('USA', 'EUR'), help='your game region')
-parser.add_argument('language', choices=('eng', 'fre', 'ger', 'ita', 'spa'), help='your game language')
+parser.add_argument('language', choices=('eng', 'fre', 'spa', 'ger', 'ita'), help='your game language')
 parser.add_argument('questfile', nargs='+', help='the decrypted quest files to serve')
 args = parser.parse_args()
 
 game = mhef.n3ds.MH4G_NA
 if args.region == 'EUR':
     game = mhef.n3ds.MH4G_EU
+if args.region == 'JPN':
+    game = mhef.n3ds.MH4G_JP
 
 root = make_root(game, args.language, args.questfile)
 
