@@ -16,10 +16,9 @@ import mhef.n3ds
 import proxy
 
 
-def make_root(game, language, quest_files):
+def make_root(root, game, language, quest_files):
     dc = mhef.n3ds.DLCCipher(game)
 
-    root = tempfile.mkdtemp()
     full_path = os.path.join(root, '3ds/mh4g_us_')
     if game == mhef.n3ds.MH4G_EU:
         full_path = os.path.join(root, '3ds/mh4g_eu_')
@@ -91,7 +90,6 @@ def make_root(game, language, quest_files):
 
     open(os.path.join(full_path, 'DLC_Special_{}.txt'.format(language)), 'wb').write(dc.encrypt('0||0| '))
 
-    return root
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
 parser.add_argument('region', choices=('JPN', 'USA', 'EUR'), help='your game region')
@@ -105,12 +103,14 @@ if args.region == 'USA':
 elif args.region == 'EUR':
     game = mhef.n3ds.MH4G_EU
 
-root = make_root(game, args.language, args.questfile)
+root = tempfile.mkdtemp()
 
-log.startLogging(sys.stderr)
-reactor.listenTCP(8080, proxy.TunnelProxyFactory())
-reactor.listenTCP(8081, Site(File(root)))
-reactor.run()
-
-shutil.rmtree(root)
+try:
+    make_root(root, game, args.language, args.questfile)
+    log.startLogging(sys.stderr)
+    reactor.listenTCP(8080, proxy.TunnelProxyFactory())
+    reactor.listenTCP(8081, Site(File(root)))
+    reactor.run()
+finally:
+    shutil.rmtree(root)
 
