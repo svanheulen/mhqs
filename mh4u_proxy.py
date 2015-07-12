@@ -81,7 +81,7 @@ def make_root(game, language, quest_files):
         quest.seek(0)
         open(os.path.join(full_path, 'm{:05d}.mib'.format(info[8])), 'wb').write(dc.encrypt(quest.read()))
         quest.close()
-    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(event_quests.encode('utf-8')))
+    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(b'\xef\xbb\xbf' + event_quests.encode('utf-8')))
 
     default_quests = dc.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
     open(os.path.join(full_path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
@@ -94,16 +94,16 @@ def make_root(game, language, quest_files):
     return root
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
-parser.add_argument('region', choices=('USA', 'EUR'), help='your game region')
-parser.add_argument('language', choices=('eng', 'fre', 'spa', 'ger', 'ita'), help='your game language')
+parser.add_argument('region', choices=('JPN', 'USA', 'EUR'), help='your game region')
+parser.add_argument('language', choices=('jpn', 'eng', 'fre', 'spa', 'ger', 'ita'), help='your game language')
 parser.add_argument('questfile', nargs='+', help='the decrypted quest files to serve')
 args = parser.parse_args()
 
-game = mhef.n3ds.MH4G_NA
-if args.region == 'EUR':
+game = mhef.n3ds.MH4G_JP
+if args.region == 'USA':
+    game = mhef.n3ds.MH4G_NA
+elif args.region == 'EUR':
     game = mhef.n3ds.MH4G_EU
-if args.region == 'JPN':
-    game = mhef.n3ds.MH4G_JP
 
 root = make_root(game, args.language, args.questfile)
 
