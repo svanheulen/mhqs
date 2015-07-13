@@ -24,6 +24,8 @@ def make_root(root, game, language, quest_files):
         full_path = os.path.join(root, '3ds/mh4g_eu_')
     elif game == mhef.n3ds.MH4G_JP:
         full_path = os.path.join(root, '3ds/mh4g_nihon')
+    elif game == mhef.n3ds.MH4G_KR:
+        full_path = os.path.join(root, '3ds/mh4g_kr_')
     os.makedirs(full_path)
 
     default_info = dc.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA               \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
@@ -92,8 +94,8 @@ def make_root(root, game, language, quest_files):
 
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
-parser.add_argument('region', choices=('JPN', 'USA', 'EUR'), help='your game region')
-parser.add_argument('language', choices=('jpn', 'eng', 'fre', 'spa', 'ger', 'ita'), help='your game language')
+parser.add_argument('region', choices=('JPN', 'USA', 'EUR', 'KOR'), help='your game region')
+parser.add_argument('language', choices=('jpn', 'eng', 'fre', 'spa', 'ger', 'ita', 'kor'), help='your game language')
 parser.add_argument('questfile', nargs='+', help='the decrypted quest files to serve')
 args = parser.parse_args()
 
@@ -102,6 +104,8 @@ if args.region == 'USA':
     game = mhef.n3ds.MH4G_NA
 elif args.region == 'EUR':
     game = mhef.n3ds.MH4G_EU
+elif args.region == 'KOR':
+    game = mhef.n3ds.MH4G_KR
 
 root = tempfile.mkdtemp()
 
