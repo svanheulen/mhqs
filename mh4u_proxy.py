@@ -16,31 +16,8 @@ import mhef.n3ds
 import proxy
 
 
-def make_root(root, game, language, quest_files):
-    dc = mhef.n3ds.DLCCipher(game)
-
-    full_path = os.path.join(root, '3ds/mh4g_us_')
-    if game == mhef.n3ds.MH4G_EU:
-        full_path = os.path.join(root, '3ds/mh4g_eu_')
-    elif game == mhef.n3ds.MH4G_JP:
-        full_path = os.path.join(root, '3ds/mh4g_nihon')
-    elif game == mhef.n3ds.MH4G_KR:
-        full_path = os.path.join(root, '3ds/mh4g_kr_')
-    os.makedirs(full_path)
-
-    default_info = dc.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA               \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
-    open(os.path.join(full_path, 'DLC_Info_Notice_{}.txt'.format(language)), 'wb').write(default_info)
-    open(os.path.join(full_path, 'DLC_Info_Otomo_{}.txt'.format(language)), 'wb').write(default_info)
-    open(os.path.join(full_path, 'DLC_Info_Quest_{}.txt'.format(language)), 'wb').write(default_info)
-    open(os.path.join(full_path, 'DLC_Info_Special_{}.txt'.format(language)), 'wb').write(default_info)
-    open(os.path.join(full_path, 'DLC_EShopInfo.txt'), 'wb').write(dc.encrypt('0|0|0|0|0|0|0'))
-    open(os.path.join(full_path, 'DLC_ShopAmulInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
-    open(os.path.join(full_path, 'DLC_ShopEquiInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
-
-    open(os.path.join(full_path, 'DLC_Info_List_{}.txt'.format(language)), 'wb').write(dc.encrypt(time.strftime('%Y%m%d00|0|Content Preview')))
-    open(os.path.join(full_path, time.strftime('DLC_Info_%Y%m%d00_{}.txt'.format(language))), 'wb').write(dc.encrypt(time.strftime('%y/%m/%d|0|Information:|Monster Hunter Quest Server|This software is licensed|under GPLv3. Please visit|github.com/svanheulen/mhqs|for more information.| | | | | ')))
-
-    event_quests = ''
+def make_quests(path, cipher, language, quest_files):
+    quests_page = ''
     for i in range(len(quest_files)):
         quest = open(quest_files[i], 'rb')
         quest.seek(0xa0)
@@ -78,39 +55,60 @@ def make_root(root, game, language, quest_files):
         main_monsters = '|'.join(main_monsters)
         client = quest.read(text_offset[6] - text_offset[5]).decode('utf-16').strip('\x00')
         sub_quest = quest.read(language_offset[lang_id] - text_offset[6]).decode('utf-16').strip('\x00')
-        event_quests += time.strftime('%Y%m%d') + u'{:02d}|{:05d}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(i, info[8], title, info[0], info[9], 0, info[10], info[5], info[2], info[1], info[13], info[14], info[15], info[16], info[17], info[11], info[12], success, sub_quest, failure, main_monsters, client, summary)
+        quests_page += time.strftime('%Y%m%d') + u'{:02d}|{:05d}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}\n'.format(i, info[8], title, info[0], info[9], 0, info[10], info[5], info[2], info[1], info[13], info[14], info[15], info[16], info[17], info[11], info[12], success, sub_quest, failure, main_monsters, client, summary)
         quest.seek(0)
-        open(os.path.join(full_path, 'm{:05d}.mib'.format(info[8])), 'wb').write(dc.encrypt(quest.read()))
+        open(os.path.join(path, 'm{:05d}.mib'.format(info[8])), 'wb').write(cipher.encrypt(quest.read()))
         quest.close()
-    open(os.path.join(full_path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt(b'\xef\xbb\xbf' + event_quests.encode('utf-8')))
+    return cipher.encrypt(b'\xef\xbb\xbf' + quests_page.encode('utf-8'))
 
-    default_quests = dc.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
-    open(os.path.join(full_path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
-    open(os.path.join(full_path, 'DLC_EpisodeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
 
-    open(os.path.join(full_path, 'DLC_OtomoInfo_{}.txt'.format(language)), 'wb').write(dc.encrypt('0|| | |0|0|0|0|0|0|0|0|0|0|0| '))
-
-    open(os.path.join(full_path, 'DLC_Special_{}.txt'.format(language)), 'wb').write(dc.encrypt('0||0| '))
+def make_root(root, region, language, event, challenge):
+    cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_JP)
+    path = os.path.join(root, '3ds/mh4g_nihon')
+    if args.region == 'USA':
+        cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_NA)
+        path = os.path.join(root, '3ds/mh4g_us_')
+    elif args.region == 'EUR':
+        cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_EU)
+        path = os.path.join(root, '3ds/mh4g_eu_')
+    elif args.region == 'KOR':
+        cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_KR)
+        path = os.path.join(root, '3ds/mh4g_kr_')
+    os.makedirs(path)
+    default_info = cipher.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA 2             \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
+    open(os.path.join(path, 'DLC_Info_Notice_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(path, 'DLC_Info_Otomo_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(path, 'DLC_Info_Quest_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(path, 'DLC_Info_Special_{}.txt'.format(language)), 'wb').write(default_info)
+    open(os.path.join(path, 'DLC_EShopInfo.txt'), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0'))
+    open(os.path.join(path, 'DLC_ShopAmulInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
+    open(os.path.join(path, 'DLC_ShopEquiInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
+    open(os.path.join(path, 'DLC_Info_List_{}.txt'.format(language)), 'wb').write(cipher.encrypt(time.strftime('%Y%m%d00|0|Content Preview')))
+    open(os.path.join(path, time.strftime('DLC_Info_%Y%m%d00_{}.txt'.format(language))), 'wb').write(cipher.encrypt(time.strftime('%y/%m/%d|0|Information:|Monster Hunter Quest Server|This software is licensed|under GPLv3. Please visit|github.com/svanheulen/mhqs|for more information.| | | | | ')))
+    default_quests = cipher.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
+    if event:
+        open(os.path.join(path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(make_quests(path, cipher, language, event))
+    else:
+        open(os.path.join(path, 'DLC_EventQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
+    if challenge:
+        open(os.path.join(path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(make_quests(path, cipher, language, challenge))
+    else:
+        open(os.path.join(path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
+    open(os.path.join(path, 'DLC_EpisodeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
+    open(os.path.join(path, 'DLC_OtomoInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|| | |0|0|0|0|0|0|0|0|0|0|0| '))
+    open(os.path.join(path, 'DLC_Special_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0||0| '))
 
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
 parser.add_argument('region', choices=('JPN', 'USA', 'EUR', 'KOR'), help='your game region')
 parser.add_argument('language', choices=('jpn', 'eng', 'fre', 'spa', 'ger', 'ita', 'kor'), help='your game language')
-parser.add_argument('questfile', nargs='+', help='the decrypted quest files to serve')
+parser.add_argument('--event', nargs='+', help='the decrypted event quest files to serve')
+parser.add_argument('--challenge', nargs='+', help='the decrypted challenge quest files to serve')
 args = parser.parse_args()
 
-game = mhef.n3ds.MH4G_JP
-if args.region == 'USA':
-    game = mhef.n3ds.MH4G_NA
-elif args.region == 'EUR':
-    game = mhef.n3ds.MH4G_EU
-elif args.region == 'KOR':
-    game = mhef.n3ds.MH4G_KR
-
 root = tempfile.mkdtemp()
-
 try:
-    make_root(root, game, args.language, args.questfile)
+    make_root(root, args.region, args.language, args.event, args.challenge)
     log.startLogging(sys.stderr)
     reactor.listenTCP(8080, proxy.TunnelProxyFactory())
     reactor.listenTCP(8081, Site(File(root)))
