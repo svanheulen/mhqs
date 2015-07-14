@@ -95,6 +95,7 @@ def make_root(root, region, language, event, challenge):
     else:
         open(os.path.join(path, 'DLC_ChallengeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
     open(os.path.join(path, 'DLC_EpisodeQuestInfo_{}.txt'.format(language)), 'wb').write(default_quests)
+    open(os.path.join(path, 'DLC_EpisodeQuestInfo2_{}.txt'.format(language)), 'wb').write(cipher.encrypt(' | | | | |0|0|0'))
     open(os.path.join(path, 'DLC_OtomoInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|| | |0|0|0|0|0|0|0|0|0|0|0| '))
     open(os.path.join(path, 'DLC_Special_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0||0| '))
 
