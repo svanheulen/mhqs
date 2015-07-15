@@ -90,6 +90,7 @@ def make_root(root, region, language, event, challenge):
     open(os.path.join(path, 'DLC_EShopInfo.txt'), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0'))
     open(os.path.join(path, 'DLC_ShopAmulInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
     open(os.path.join(path, 'DLC_ShopEquiInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
+    open(os.path.join(path, 'DLC_ShopItemInfo_{}.txt'.format(language)), 'wb').write(cipher.encrypt('0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0'))
     open(os.path.join(path, 'DLC_Info_List_{}.txt'.format(language)), 'wb').write(cipher.encrypt(time.strftime('%Y%m%d00|0|Content Preview')))
     open(os.path.join(path, time.strftime('DLC_Info_%Y%m%d00_{}.txt'.format(language))), 'wb').write(cipher.encrypt(time.strftime('%y/%m/%d|0|Information:|Monster Hunter Quest Server|This software is licensed|under GPLv3. Please visit|github.com/svanheulen/mhqs|for more information.| | | | | ')))
     default_quests = cipher.encrypt('0|0| |0|0|0|0|0|0|0|98|98|98|98|98|0|0| | | | | | | | | | | | | | | ')
