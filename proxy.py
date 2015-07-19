@@ -40,7 +40,7 @@ class TunnelProtocolFactory(ClientFactory):
 
 class InjectionProxyRequest(ProxyRequest):
     def process(self):
-        for subdomain in ('goshawk', 'corsair', 'skyhawk', 'viper', 'crusader'):
+        for subdomain in ('goshawk', 'goshawk4g', 'corsair', 'skyhawk', 'viper', 'crusader'):
             self.uri = self.uri.replace(subdomain + '.capcom.co.jp', 'localhost:8081')
         ProxyRequest.process(self)
 

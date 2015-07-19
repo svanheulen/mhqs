@@ -74,6 +74,9 @@ def make_root(root, region, language, event, challenge):
     elif args.region == 'KOR':
         cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_KR)
         path = os.path.join(root, '3ds/mh4g_kr_')
+    elif args.region == 'TWN':
+        cipher = mhef.n3ds.DLCCipher(mhef.n3ds.MH4G_TW)
+        path = os.path.join(root, 'redgiant/dl/pro_tw')
     os.makedirs(path)
     default_info = cipher.encrypt(time.strftime('%Y%m%d00|1|0| |Monster Hunter Quest Server\n%Y%m%d00|2|0| |Version BETA 2             \n%Y%m%d00|3|0| |github.com/svanheulen/mhqs '))
     open(os.path.join(path, 'DLC_Info_Notice_{}.txt'.format(language)), 'wb').write(default_info)
@@ -102,7 +105,7 @@ def make_root(root, region, language, event, challenge):
 
 
 parser = argparse.ArgumentParser(description='Runs a proxy for serving custom MH4U DLC quests.')
-parser.add_argument('region', choices=('JPN', 'USA', 'EUR', 'KOR'), help='your game region')
+parser.add_argument('region', choices=('JPN', 'USA', 'EUR', 'KOR', 'TWN'), help='your game region')
 parser.add_argument('language', choices=('jpn', 'eng', 'fre', 'spa', 'ger', 'ita', 'kor'), help='your game language')
 parser.add_argument('--event', nargs='+', help='the decrypted event quest files to serve')
 parser.add_argument('--challenge', nargs='+', help='the decrypted challenge quest files to serve')
