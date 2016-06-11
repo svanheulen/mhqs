@@ -20,7 +20,8 @@ def make_quests(path, cipher, language, quest_files):
     quests_page = ''
     for i in range(len(quest_files)):
         quest = open(quest_files[i], 'rb')
-        quest.seek(0xa0)
+        info_offset = struct.unpack('I',quest.read(4))
+        quest.seek(info_offset[0])
         info = struct.unpack('8I2H3B33x5H', quest.read(82))
         quest.seek(info[7])
         language_offset = struct.unpack('5I', quest.read(20))
